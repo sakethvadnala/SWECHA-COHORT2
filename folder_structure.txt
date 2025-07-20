@@ -1,0 +1,9 @@
+Folder PATH listing for volume OS
+Volume serial number is 8E47-4215
+C:.
+¦   app.py
+¦   folder_structure.txt
+¦   Readme.md
+¦   requirements.txt
+¦   
++---audio_data

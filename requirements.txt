@@ -1,0 +1,76 @@
+import streamlit as st
+import os
+from pathlib import Path
+import shutil
+import zipfile
+
+# All categories
+CATEGORIES = [
+    "Agriculture", "Food", "Places", "Songs", "Historical People",
+    "Education", "Events", "Skills"
+]
+
+# Directory to store uploaded files
+DATA_DIR = Path("audio_data")
+DATA_DIR.mkdir(exist_ok=True)
+
+# Helper to save file
+def save_file(uploaded_file, category):
+    category_path = DATA_DIR / category
+    category_path.mkdir(parents=True, exist_ok=True)
+    with open(category_path / uploaded_file.name, "wb") as f:
+        f.write(uploaded_file.read())
+
+# Helper to create ZIP for download
+def create_zip(category):
+    zip_path = f"{category}.zip"
+    category_folder = DATA_DIR / category
+
+    with zipfile.ZipFile(zip_path, 'w') as zipf:
+        for file in category_folder.glob("*"):
+            zipf.write(file, arcname=file.name)
+    return zip_path
+
+# Streamlit UI
+st.title("🎧 Audio Dataset Platform")
+
+# Tabs: Input and Explore
+tab1, tab2 = st.tabs(["📤 Input Data", "📁 Explore Datasets"])
+
+# --- Input Section ---
+with tab1:
+    st.header("Upload Audio Files to a Category")
+
+    selected_category = st.selectbox("Select Category to Upload Into", CATEGORIES)
+    uploaded_files = st.file_uploader("Upload Audio Files", accept_multiple_files=True, type=["mp3", "wav", "ogg"])
+
+    if uploaded_files:
+        for file in uploaded_files:
+            save_file(file, selected_category)
+        st.success(f"✅ Uploaded {len(uploaded_files)} file(s) to '{selected_category}'.")
+
+# --- Explore Section ---
+with tab2:
+    st.header("Explore and Download Datasets")
+
+    selected_view_category = st.selectbox("Select Category to View/Download", CATEGORIES)
+    category_path = DATA_DIR / selected_view_category
+
+    if category_path.exists() and any(category_path.iterdir()):
+        st.subheader(f"Files in '{selected_view_category}'")
+        for file in category_path.iterdir():
+            st.markdown(f"🎵 {file.name}")
+        
+        if st.button("Download All as ZIP"):
+            zip_file = create_zip(selected_view_category)
+            with open(zip_file, "rb") as f:
+                st.download_button(
+                    label="📦 Download ZIP",
+                    data=f,
+                    file_name=zip_file,
+                    mime="application/zip"
+                )
+            os.remove(zip_file)  # Clean up after download
+    else:
+        st.info(f"No files uploaded yet in '{selected_view_category}'.")
+
